@@ -195,6 +195,8 @@ class PPOTrainer(ABC):
         consumed_samples=0,
         num_update_steps_per_episodes=1,
     ) -> None:
+        # num_update_steps_per_episodes = (len(prompts_dataset) * args.n_samples_per_prompt // args.train_batch_size * args.max_epochs）
+        # num_rollouts_per_episodes = len(prompts_dataset) // args.rollout_batch_size
         num_rollouts_per_episodes = (
             num_update_steps_per_episodes
             * args.train_batch_size
@@ -229,12 +231,14 @@ class PPOTrainer(ABC):
             )
 
             for rand_prompts, labels in self.prompts_dataloader:
+                # if self.strategy.is_rank_0():
+                #     print(f"rand_prompts / prompts_dataloader: {len(rand_prompts)} / {len(prompts_dataloader)}" )
                 for i, experience in enumerate(
                     self.experience_maker.make_experience_list(rand_prompts, labels, **self.generate_kwargs)
                 ):
                     if i == 0:
                         output = self.tokenizer.batch_decode(
-                            experience.sequences[0].unsqueeze(0), skip_special_tokens=True
+                            experience.sequences[0].unsqueeze(0), skip_special_tokens=False
                         )
                         self.strategy.print(output)
                     self.replay_buffer.append(experience)

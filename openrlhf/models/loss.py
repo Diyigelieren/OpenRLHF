@@ -159,8 +159,13 @@ class DPOLoss(nn.Module):
             losses = (logits - 1 / (2 * self.beta)) ** 2  # Eq. 17 of https://arxiv.org/pdf/2310.12036v2.pdf
         else:
             # Eq. 3 https://ericmitchell.ai/cdpo.pdf; label_smoothing=0 gives original DPO (Eq. 7 of https://arxiv.org/pdf/2305.18290.pdf)
+            # losses = (
+            #     -F.logsigmoid(self.beta * logits) * (1 - self.label_smoothing)
+            #     - F.logsigmoid(-self.beta * logits) * self.label_smoothing
+            # )
+            alpha = 0.1
             losses = (
-                -F.logsigmoid(self.beta * logits) * (1 - self.label_smoothing)
+                (-F.logsigmoid(self.beta * logits) - alpha * policy_chosen_logps) * (1 - self.label_smoothing)
                 - F.logsigmoid(-self.beta * logits) * self.label_smoothing
             )
 
